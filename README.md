@@ -41,5 +41,7 @@ Provide the host ip_address in the /et/ansible/host and also provide python_ansi
                   ansible_python_interpreter=/usr/bin/python3
                   
 refer the blogs:https://www.techrepublic.com/article/how-to-install-ansible-on-ubuntu-server-18-04/
+                
+refer the blogs:https://docs.ansible.com/ansible/latest/reference_appendices/python_3_support.html
                
                   
