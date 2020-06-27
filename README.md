@@ -31,7 +31,15 @@ You can verify your current context by doing the following:
                   
                   
 #  Ansible Setup
+Provide the host ip_address in the /et/ansible/host and also provide python_ansible_interpreter:
 
+                  sudo nano /etc/ansible/hosts
+                  [nodes]
+                  slave1 ansible_ssh_host=<ip_addr_of_node_machine>
+                  
+                  [nodes:vars]
+                  ansible_python_interpreter=/usr/bin/python3
+                  
 refer the blogs:https://www.techrepublic.com/article/how-to-install-ansible-on-ubuntu-server-18-04/
                
                   
