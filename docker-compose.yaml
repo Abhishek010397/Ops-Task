@@ -1,0 +1,19 @@
+version: '3.3'
+services:
+  redis:
+    image: redis
+    volumes:
+        - redis_data:/data
+    restart: always
+  
+  app:
+    depends_on:
+      - redis
+    image: 2307297/redis-ha-new
+    ports:
+     - "8000:8000"
+    restart: always
+
+volumes:
+    redis_data: {}
+      

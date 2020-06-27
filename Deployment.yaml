@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deploy
+  namespace: demo-ops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: golang-app
+  template:
+    metadata:
+      labels:
+        app: golang-app
+    spec:
+      containers:
+      - name: golang-app
+        image: 2307297/redis-ha-new
+        imagePullPolicy: IfNotPresent
+        args:
+        - /bin/sh
+        - -c
+        - vi  /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "2m"
+          limits:
+            memory: "1Gi"
+            cpu: "2m"
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/healthy
+          initialDelaySeconds: 5
+          periodSeconds: 5

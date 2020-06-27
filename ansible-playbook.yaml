@@ -1,0 +1,134 @@
+---
+- hosts: slave1
+  become: yes
+  tasks:
+  - name: ADD demo-ops to /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '^127\.0\.0\.1[ \t]+localhost'
+      line: '127.0.0.1 localhost demo-ops'
+      state: present
+
+  - name: ADD  a demo User
+    user:
+      name: demo
+      uid: 1040
+      group: admin
+
+  - name: ADD or MODIFY soft limit for the user
+    pam_limits:
+      domain: demo
+      limit_type: soft
+      limit_item: nofile
+      value: 64000
+
+  - name: Add or modify fsize hard limit for the user demo. Keep or set the maximal value.
+    pam_limits:
+      domain: demo
+      limit_type: hard
+      limit_item: fsize
+      value: 1000000
+      use_max: yes
+
+  - name: Add or modify memlock, both soft and hard, limit for the user demo with a comment.
+    pam_limits:
+      domain: james
+      limit_type: '-'
+      limit_item: memlock
+      value: unlimited
+      comment: unlimited memory lock for demo
+
+  - name: Add or modify hard nofile limits for wildcard domain
+    pam_limits:
+      domain: '*'
+      limit_type: hard
+      limit_item: nofile
+      value: 39693561
+
+  - name: Set timezone to Asia/Kolkata
+    timezone:
+      name: Asia/Kolkata
+
+  - name: Add Docker GPG key
+    apt_key: url=https://download.docker.com/linux/ubuntu/gpg
+
+  - name: Add Docker APT repository
+    apt_repository:
+     repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu/ focal stable
+     state: present
+
+  - name: Install list of packages
+    apt:
+      name: "{{ item }}"
+      state: latest
+      update_cache: yes
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - docker-ce
+
+
+
+  - name: Install docker-compose
+    remote_user: ubuntu
+    get_url:
+      url : https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: 'u+x,g+x'
+
+  - name: Create a directory if it does not exist
+    file:
+      path: /etc/demo-ops
+      state: directory
+      mode: '0755'
+
+  - name: Copying contents to new directory
+    copy:
+      src: compose/docker-compose.yaml
+      dest: /etc/demo-ops/docker-compose.yaml
+      mode: '0644'
+
+  - name: Install dependent python modules
+    pip:
+     name: " {{item }}"
+    with_items:
+      - docker
+      - docker-compose
+
+  - name: Stop existing services for docker-compose
+    docker_compose:
+      project_src: /etc/demo-ops
+      state: absent
+
+  - name: Create and start services
+    docker_compose:
+      project_src: /etc/demo-ops
+    register: output
+
+  - debug:
+      var: output
+
+  - name: Run `docker-compose up` again
+    docker_compose:
+      project_src: /etc/demo-ops
+      build: no
+    register: output
+
+  - debug:
+      var: output
+
+  - assert:
+      that: "not output.changed "
+
+
+  - name: Syslogging output
+    docker_container:
+      name: myservice
+      image: 2307297/redis-ha-new
+      log_driver: syslog
+      log_options:
+        syslog-address: tcp://localhost:8000
+        syslog-facility: daemon
+        tag: myservice
